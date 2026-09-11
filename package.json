@@ -1,0 +1,6 @@
+{
+  "name": "litchilens",
+  "private": true,
+  "type": "module",
+  "scripts": {"test": "node --test tests/catalog.test.js", "check": "node --check web/app.js && node --check web/catalog.js"}
+}

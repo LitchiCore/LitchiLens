@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="军训照片分享相册，按日期浏览，下载高清 JPG 与可选 NEF 原片。">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#101913">
+  <title>军训影集 · 荔枝镜头</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="./"><img src="icon.svg" width="28" height="28" alt="">荔枝镜头 <span>LITCHILENS</span></a><span class="edition">2026 · 军训记录</span></header>
+  <main>
+    <section class="intro" aria-labelledby="title">
+      <div><p class="eyebrow">我们的军训相册</p><h1 id="title">军训影集<span class="title-dot">.</span></h1><p id="intro-text">照片陆续整理中，留住每一个在场的瞬间。</p></div>
+      <div class="total"><strong id="total">—</strong><span>张照片已上线</span></div>
+    </section>
+    <section class="album" aria-label="照片浏览">
+      <div class="tools"><div class="section-title"><span class="line"></span><h2>全部照片</h2><span id="result-count" class="muted"></span></div><label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="search" type="search" placeholder="搜索照片编号" aria-label="搜索照片编号" maxlength="100"></label></div>
+      <nav id="dates" class="dates" aria-label="按拍摄日期筛选"></nav>
+      <p id="status" role="status" aria-live="polite" class="status">正在读取相册…</p>
+      <div id="empty" class="empty" hidden><span class="empty-number" aria-hidden="true">01 / 待续</span><h2 id="empty-title">照片正在整理中</h2><p id="empty-text">高清照片准备好后，会分批上传到这里。</p><button id="retry" class="button secondary" type="button">刷新相册</button></div>
+      <div id="gallery" class="gallery"></div>
+      <button id="more" class="button more" type="button" hidden>加载更多照片</button>
+    </section>
+    <aside class="download-note"><span>下载小提示</span><p>点开照片可下载高清 JPG；有 NEF 原片时会显示单独的下载按钮。手机内置浏览器无法保存时，请在系统浏览器中打开。</p></aside>
+  </main>
+  <footer><span>荔枝镜头 · 军训影集</span><span id="updated">照片分批更新</span></footer>
+  <dialog id="viewer" aria-labelledby="photo-title">
+    <div class="viewer-head"><div><h2 id="photo-title"></h2><p id="photo-date"></p></div><button id="close" class="icon-button" aria-label="关闭大图" type="button">✕</button></div>
+    <div class="image-stage"><button id="previous" class="icon-button previous" aria-label="上一张" type="button">‹</button><img id="large" alt=""><button id="next" class="icon-button next" aria-label="下一张" type="button">›</button><p id="image-error" class="image-error" role="status" hidden>预览图加载失败，请重试或下载 JPG。</p></div>
+    <div class="viewer-bottom"><span id="position"></span><div class="download-actions"><a id="download-nef" class="button secondary" hidden>下载 NEF 原片</a><a id="download-jpg" class="button primary">下载高清 JPG</a></div></div>
+  </dialog>
+  <noscript><p class="status">请启用浏览器 JavaScript 后查看相册。</p></noscript>
+</body>
+</html>

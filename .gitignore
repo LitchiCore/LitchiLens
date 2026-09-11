@@ -6,6 +6,13 @@
 /runtime/
 /logs/
 /backups/
+/models/*.onnx
+*.MOV
+*.mov
+*.DNG
+*.dng
+*.xmp
+*.acr
 *.jpg
 *.jpeg
 *.JPG
