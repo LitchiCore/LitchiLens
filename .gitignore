@@ -1,0 +1,40 @@
+# 本地照片、衍生内容和运行数据
+/photos/
+/data/
+/output/
+/private/
+/runtime/
+/logs/
+/backups/
+*.jpg
+*.jpeg
+*.JPG
+*.JPEG
+*.nef
+*.NEF
+*.zip
+*.7z
+*.tar
+*.gz
+*.db
+*.sqlite*
+*.log
+
+# 凭据与机器专用配置
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.local.*
+
+# 开发环境与构建产物
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+dist/
+.DS_Store
+Thumbs.db
