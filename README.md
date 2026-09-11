@@ -68,7 +68,7 @@ Linux 对应使用 `.venv/bin/python`。模型来自 [OpenCV Zoo](https://github
 
 ## 部署与分享
 
-见 [自有服务器部署说明](deploy/README.md)。无需域名，链接格式为 `https://[公网IPv6]:端口/分享路径/`。
+见 [自有服务器部署说明](deploy/README.md)。无需域名，直接打开 `https://[公网IPv6]:端口/` 会自动跳转到相册，原来的完整分享路径仍有效。
 
 - 访问者的网络必须支持 IPv6。
 - 分享路径不是身份认证，拿到链接的人都能访问和转发。

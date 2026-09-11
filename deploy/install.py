@@ -72,6 +72,7 @@ server {{
     add_header X-Robots-Tag "noindex, nofollow, noarchive" always;
     add_header Referrer-Policy no-referrer always;
     add_header Content-Security-Policy "default-src 'self'; img-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'" always;
+    location = / {{ return 302 /{token}/; }}
     location / {{ return 404; }}
     location = /robots.txt {{ default_type text/plain; return 200 "User-agent: *\\nDisallow: /\\n"; }}
     location = /{token} {{ return 302 /{token}/; }}

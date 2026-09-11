@@ -12,7 +12,7 @@
 sudo python3 /tmp/litchilens/deploy/install.py --site /tmp/litchilens/site --port 8444
 ```
 
-安装器申请专用 IP 证书，生成随机分享路径，创建 `/srv/litchilens` 发布目录和独立 Nginx 站点。通过配置测试、reload 后严格校验 TLS 和 HTTP 200，再启用每小时维护任务。若安装了 UFW，仅增加指定端口规则，不改变 UFW 启用状态。
+安装器申请专用 IP 证书，生成相册路径，创建 `/srv/litchilens` 发布目录和独立 Nginx 站点。端口首页自动跳转到相册，因此路径不承担访问限制作用。通过配置测试、reload 后严格校验 TLS 和 HTTP 200，再启用每小时维护任务。若安装了 UFW，仅增加指定端口规则，不改变 UFW 启用状态。
 
 首次安装中断且目录已创建时，查明原因后可对同一端口增加 `--resume` 继续。它不用于常规更新。Nginx 检查失败时撤下新站点，并检查、加载原配置。
 
