@@ -1,7 +1,7 @@
 // 相册纯数据逻辑，浏览器与 Node 验证共用。
 export function filterPhotos(photos, date, query) {
   const needle = query.trim().toLocaleLowerCase();
-  return photos.filter(p => (!date || p.date === date) && (!needle || p.name.toLocaleLowerCase().includes(needle)));
+  return photos.filter(p => (!date || p.date === date) && (!needle || (p.name+' '+p.id).toLocaleLowerCase().includes(needle)));
 }
 export function formatBytes(bytes) {
   if (!Number.isFinite(bytes) || bytes < 0) return '';
@@ -13,7 +13,7 @@ export function safeAsset(path) {
   return path;
 }
 export function validateCatalog(data) {
-  if (data.version !== 1 || !Array.isArray(data.photos) || !Array.isArray(data.dates)) throw new Error('相册索引格式不受支持');
+  if (![1,2].includes(data.version) || !Array.isArray(data.photos) || !Array.isArray(data.dates)) throw new Error('相册索引格式不受支持');
   if (typeof data.title !== 'string' || !data.dates.every(d => /^\d{4}-\d{2}-\d{2}$/.test(d))) throw new Error('相册信息不完整');
   const ids = new Set();
   for (const p of data.photos) {
@@ -21,6 +21,10 @@ export function validateCatalog(data) {
     ids.add(p.id);
     safeAsset(p.thumb); safeAsset(p.preview); safeAsset(p.jpg?.url);
     if (p.nef) safeAsset(p.nef.url);
+    if (data.version === 2) {
+      if(!Array.isArray(p.versions)||!p.versions.length)throw new Error('缺少照片版本');
+      for(const v of p.versions){safeAsset(v.thumb);safeAsset(v.preview);safeAsset(v.jpg?.url);if(typeof v.label!=='string')throw new Error('版本标签无效');}
+    }
   }
   return data;
 }

@@ -6,6 +6,7 @@ from setup_faces import verify_model
 class FaceDetector:
     def __init__(self):
         import cv2
+        cv2.setNumThreads(2)
         self.cv2 = cv2
         self.detector = cv2.FaceDetectorYN.create(str(verify_model()), '', (320, 320), 0.8, 0.3, 5000)
 

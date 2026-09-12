@@ -1,99 +1,73 @@
-# 荔枝镜头 · LitchiLens
+# LitchiLens
 
-用于活动照片临时分享的中文相册。手机浏览、免登录、JPG 优先、NEF 可选，自有服务器通过 IPv6 与独立 HTTPS 端口分发。
+用于活动照片临时分享的中文照片库，自有服务器通过 IPv6 + HTTPS 提供服务，访问者无需登录。
 
-## 已实现
+## 照片与版本
 
-- 按日期浏览、按文件名搜索，每批加载 48 张缩略图。
-- 大图查看、键盘切换、高清 JPG 下载及可选 NEF 下载。
-- 离线人脸检测决定缩略图取景；合照无法兼顾所有检测到的人脸时保留完整画面，没有检测结果时居中取景。
-- 480 × 360 缩略图、最长边 1920 像素的预览图，原片只读。
-- 普通 JPEG 与包含 MPO 多图结构的 JPG 导入，处理 EXIF 方向。
-- JPG/NEF 配对、歧义报告、无效文件检查，失败保留旧索引。
-- 等待照片页面、Nginx 部署、下载限速和并发限制、IPv6 证书维护。
+首页进入照片库或选择自己的自拍找照片。照片 ID 采用 `日期_DSC编号`，绑定标准转换 JPG、批量调色 JPG、精修 JPG 和 NEF。默认下载优先精修，其次批量调色；可以手动选择其他版本。每页加载 48 张缩略图，支持日期、编号和版本筛选。
 
-人脸检测只用于构图，不提取身份特征、不保存人脸框。“找同一个人的其他照片”尚未实现。
+只有原片根目录中数字日期文件夹内的照片进入收录范围；回收站不参与。导出的 JPG 按唯一 DSC 编号匹配入选原片，日期始终来自原片目录，忽略导出目录的日期。跨日期编号重复时不猜测配对，写入报告。根目录 `jpg` 中的旧版本标为精修；日期目录中只有 JPG 的照片也可收录。
 
-NEF 分包页支持下载提前准备好的 ZIP，显示包号、张数、大小、日期范围和 SHA-256，并可复制全部链接供下载工具使用。访问端口下的 `/nef` 即可进入；ZIP 单独存放，不随相册更新反复复制。
-
-## 准备环境
-
-本地构建需要 Python 3.12 或更高版本。网站访问本身不运行 Python、模型或数据库。
+标准转换使用 rawpy、相机白平衡、全分辨率和 sRGB，不套额外调色风格；与尼康软件或相机 Picture Control 渲染不保证完全一致。损坏的 NEF 跳过并列入 `conversion-errors.json`，不会覆盖或删除原片。
 
 ```powershell
-python -m venv .venv
-.venv\Scripts\python -m pip install -r requirements.txt
-.venv\Scripts\python scripts/setup_faces.py
+python -m pip install -r requirements.txt
+npm ci
+python scripts/setup_faces.py
+python scripts/convert_raw.py --source 'E:\照片\军训' --output 'E:\衍生\标准JPG' --workers 4
+python scripts/build_library.py --source 'E:\照片\军训' --exports 'D:\导出JPG' --generated 'E:\衍生\标准JPG' --output 'E:\衍生\网站' --workers 4
+node scripts/index_all_faces.mjs 'E:\衍生\网站' private/faces.json 4
 ```
 
-Linux 对应使用 `.venv/bin/python`。模型来自 [OpenCV Zoo](https://github.com/opencv/opencv_zoo/tree/47534e27c9851bb1128ccc0102f1145e27f23f98/models/face_detection_yunet)，下载后进行固定 SHA-256 校验；来源和许可见 [models](models/README.md)。
+衍生目录必须与输入目录分离。构建器在同磁盘上尽可能使用只读用途的硬链接，避免重复占用原片空间；不要直接编辑构建目录中的下载文件。新增调色版本应保存回独立导出目录，沿用 DSC 编号，再重新构建。构建失败保留原目录及旧索引，成功后原子替换索引。
 
-## 整理照片
+## 人脸找照片
 
-```text
-军训/
-  2026-8-26/
-    DSC_3901.NEF
-    DSC_3901.jpg
-  2026-8-27/
-    任意子目录/
-      DSC_4001.NEF
-      DSC_4001-已增强-NR 拷贝.jpg
-```
+使用固定版本 [Human 3.3.6](https://github.com/vladmandic/human) 的 BlazeFace、FaceMesh、FaceRes；模型来源见[上游模型说明](https://github.com/vladmandic/human/wiki/Models)。离线索引与浏览器共享配置；合照分区域检测，一张照片可绑定多张脸。只保存匿名特征到私有目录，不保存姓名、年龄或性别等属性。
 
-日期来自目录名，不依赖文件修改时间。日期目录下可以有多层子目录，扩展名大小写均支持。新增日期或补入 JPG 后重新构建即可。
+自拍只在访问者设备中解码并提取特征；发给服务器的是 1024 维向量，用于即时查询，不保存查询图片或向量。服务器只返回候选照片 ID，完整人物索引不公开。用户必须选择自己的照片，多人图需选择自己。结果不是身份认证或概率：远景小脸、侧脸、遮挡可能漏检，也可能误匹配。需要真实跨照片样本评估，不能以同图查询通过宣称准确率。
 
-配对优先同目录同名；否则按同日期内唯一相机编号（例如 `DSC_3901`）匹配，兼容上述导出后缀。存在多个候选时不猜测，只发布 JPG 并写入本地报告。导出 JPG 时保留原始编号，可以提高配对可靠性。
+## 不满意、下架与管理
 
-## 构建与预览
+勾选照片后可以下载 ZIP，或填写最多 500 字的重调要求。留言只对管理员可见，绑定所选 ID。下架须二次确认，立即从目录和搜索结果中排除该 ID，并拒绝其 JPG、NEF、缩略图和预览链接。原文件保留；已经下载或缓存到设备上的文件不能撤回。
 
-以下路径为示例。输出目录必须与照片目录分离。
+旧的固定 NEF 整包无法逐 ID 撤回，第二版部署会停用旧包入口，磁盘文件保留。批量下载改为依据当前可见 ID 生成流式 ZIP，每次最多 100 张，不在线转换原片。
+
+管理页仅监听服务器 `127.0.0.1:8769`，不经公网 Nginx 暴露。使用 SSH 转发：
 
 ```powershell
-# 照片还没准备好：只生成等待页面，不复制照片。
-.venv\Scripts\python scripts/build_album.py --source 'E:\照片\军训' --output output/site --inventory-only
-
-# JPG 准备好：生成相册与人脸取景缩略图。
-.venv\Scripts\python scripts/build_album.py --source 'E:\照片\军训' --output output/site
-
-# 可选：复制已配对的 NEF，开启原片下载。需要预留原片空间。
-.venv\Scripts\python scripts/build_album.py --source 'E:\照片\军训' --output output/site --include-nef
-
-.venv\Scripts\python -m http.server 8765 --bind 127.0.0.1 --directory output/site
+ssh -N -L 127.0.0.1:8769:127.0.0.1:8769 <服务器SSH别名>
 ```
 
-打开本机 `http://127.0.0.1:8765/`。输出目录旁的 `site-report.json` 记录数量、取景方式和配对问题，报告不属于发布内容。
+打开 `http://127.0.0.1:8769/`，查看缩略图、编号、留言、时间、状态，下载对应 NEF，导出待处理 CSV，并标记“待处理 / 处理中 / 已完成”。标记完成不会自动上传新版本。状态保存在服务器 `/var/lib/litchilens/state.json`，与照片发布目录分离；更新网站不会清空申请或解除下架。
 
-默认遇到损坏或内容不符的 JPG 时停止，保留旧索引。确实希望跳过时才增加 `--skip-invalid`，所有跳过项写入报告。`--center-crop` 可明确停用人脸检测。
+## 部署与并发
 
-缩略图、预览图去掉 EXIF；下载 JPG/NEF 保持原文件字节，包括原有元数据。正式分享前应检查 GPS 等信息。人脸检测可能漏掉侧脸、遮挡和远景小脸，不能保证每张都选中最佳构图。
+沿用第一版的专用证书和维护定时器，第二版由 `deploy/install_library.py` 安装。将完整网站放到服务器 `/srv/litchilens/library-releases/<版本>/`，私有人脸索引另行上传，再执行：
 
-## 部署与分享
+```sh
+sudo python3 deploy/install_library.py --site /srv/litchilens/library-releases/<版本> --faces /path/to/private-faces.json
+```
 
-见 [自有服务器部署说明](deploy/README.md)。无需域名，直接打开 `https://[公网IPv6]:端口/` 会自动跳转到相册，原来的完整分享路径仍有效。
+安装前备份 Nginx 和服务配置，检查 Nginx 配置，启动回环 API 后 reload，并校验证书链、有效期及地址匹配；失败回滚。首次安装证书仍可参考 [部署说明](deploy/README.md)，旧静态发布器不适用于第二版照片库。
 
-- 访问者的网络必须支持 IPv6。
-- 分享路径不是身份认证，拿到链接的人都能访问和转发。
-- IPv6 变化后自动维护匹配证书，但旧链接、二维码仍需替换。
-- 维护任务失败记录到 systemd 日志，不代表已经通知管理员。
+- 大文件全站最多 4 路，每 IP 1 路、每路 1MiB/s，合计约 4.2MB/s。
+- 模型全站最多 4 路，每路 256KiB/s，合计约 1MB/s；繁忙时自动重试。
+- 按约 7MB/s 上行预算，为缩略图和操作留出约 1.8MB/s；这不是链路级 QoS 保证，其他服务流量仍会影响带宽。
+- 搜索最多并发 2 个，每 IP 每分钟 6 次；其他操作独立限流。
+- 在线人数按最近 90 秒活跃浏览器会话估算；下载计数跟踪正在传输的任务。状态仅保存在内存中。
+- 原图交给 Nginx 传输，隐藏检查由回环 API 处理，禁止直接访问内部文件路径。
 
-生成分享二维码：
+页脚可显示自愿赞赏入口。将 `赞赏码.png` 放在本地原片根目录后构建；图片只复制到部署输出，不进入 Git。赞赏不影响下载和重调处理顺序。
+
+## 验证与边界
 
 ```powershell
-.venv\Scripts\python scripts/make_qr.py 'https://[你的公网IPv6]:8444/你的分享路径/'
+python -m unittest discover -s tests -p 'test_*.py'
+npm test
+npm run check
 ```
 
-照片、人物索引、模型、日志、真实链接、服务器配置和凭据不进入 Git。
+测试覆盖真实 HTTP 隐藏和 ZIP、持久化、留言、非法请求、缺失资产、目录日期和配对歧义；移动端还需实际浏览器验证。可用 `deploy/library_server.py --site <网站> --state private/test-state.json --faces private/faces.json --port 8767 --admin-port 8770` 配合 `node scripts/preview_library.mjs <网站> 8768 8767` 做本机预览。
 
-## 验证
-
-```powershell
-python -m unittest discover -s tests -v
-node --test tests/*.test.js
-node --check web/app.js
-node --check web/catalog.js
-```
-
-测试覆盖真实 CLI 输入、配对歧义、MPO 格式、无效输入、索引保留、源目录边界、人脸取景几何、筛选与资源路径约束。它们不代替真实照片抽查、移动端浏览和独立外网测试。
-
-语言与协作要求见 [开发约定](AGENTS.md)。
+照片、赞赏码、人脸向量、真实地址、凭据和运行数据禁止提交。局域网 HTTPS 验证不能替代独立外网验证。约定见 [AGENTS.md](AGENTS.md)。
