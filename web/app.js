@@ -13,7 +13,7 @@ export async function post(route,data) {
   return result;
 }
 function modal(id) {lastFocus=document.activeElement; $(id).showModal();}
-$('sponsor-open').onclick=()=>{$('sponsor-image').src='sponsor.png';modal('sponsor-dialog');};
+document.querySelectorAll('[data-sponsor-open]').forEach(button=>{button.onclick=()=>{$('sponsor-image').src='sponsor.png';modal('sponsor-dialog');};});
 function updateSelection() {
   $('selection').hidden=!selected.size;
   $('selection-count').textContent=`已选 ${selected.size} 张`;

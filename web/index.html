@@ -8,7 +8,7 @@
   <script type="module" src="app.js"></script>
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="#home" aria-label="LitchiLens 首页"><img src="icon.svg" width="28" height="28" alt="">LitchiLens</a><span id="traffic" class="muted" aria-live="polite">正在连接…</span><a class="edition" href="#library">照片库 ↗</a></header>
+  <header class="topbar"><a class="brand" href="#home" aria-label="LitchiLens 首页"><img src="icon.svg" width="28" height="28" alt="">LitchiLens</a><span id="traffic" class="muted" aria-live="polite">正在连接…</span><nav class="header-links" aria-label="网站导航"><a class="edition" href="#library">照片库 ↗</a><button class="sponsor-link" data-sponsor-open type="button">自愿赞赏</button></nav></header>
   <main>
     <section id="home" class="home">
       <p class="eyebrow">OUR DAYS, TOGETHER</p><h1>那些在场的瞬间<span class="title-dot">.</span></h1>
@@ -39,7 +39,7 @@
     </section>
   </main>
   <div id="selection" class="selection" hidden><span id="selection-count"></span><button id="batch-download" class="button primary">下载所选</button><button id="unhappy" class="button secondary">不满意</button><button id="clear-selection" class="button secondary">取消勾选</button></div>
-  <footer><span>LitchiLens · 军训影集</span><button id="sponsor-open" class="sponsor-link">请拍摄者喝杯水 · 自愿</button><span id="updated">留住每一个在场的瞬间</span></footer>
+  <footer><span>LitchiLens · 军训影集</span><button id="sponsor-open" class="sponsor-link" data-sponsor-open type="button">请拍摄者喝杯水 · 自愿</button><span id="updated">留住每一个在场的瞬间</span></footer>
   <dialog id="sponsor-dialog" aria-labelledby="sponsor-title"><div class="form-dialog"><h2 id="sponsor-title">谢谢你的心意</h2><p>照片免费分享，喜欢就带走。本站运行电费约 ¥1/天。想请我喝杯水的话，谢谢你的心意；不赞赏也完全没关系。</p><img id="sponsor-image" class="sponsor-image" alt="拍摄者的微信赞赏码"><p class="muted">可以保存图片后在微信中识别。赞赏不会影响照片下载或调色申请的处理。</p><button class="button secondary" data-close="sponsor-dialog">继续看照片</button></div></dialog>
   <dialog id="viewer" aria-labelledby="photo-title">
     <div class="viewer-head"><div><h2 id="photo-title"></h2><p id="photo-date"></p></div><button id="close" class="icon-button" aria-label="关闭大图">✕</button></div>
