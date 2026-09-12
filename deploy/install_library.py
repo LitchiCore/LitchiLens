@@ -22,9 +22,9 @@ def nginx_config(token,port):
         proxy_http_version 1.1;
         proxy_connect_timeout 3s;
         proxy_read_timeout 60s;'''
-    return f'''# LitchiLens；下载最多 4 路，每路 1MiB/s，为浏览保留带宽。
+    return f'''# LitchiLens；网站共享总带宽由 litchilens-bandwidth 管理，不设置逐连接限速。
 log_format lens_transfer escape=json '{{"id":"$request_id"}}';
-limit_conn_zone $binary_remote_addr zone=lens_bulk_ip:10m;
+limit_conn_zone $server_name zone=lens_zip_total:1m;
 limit_conn_zone $server_name zone=lens_bulk_total:1m;
 limit_conn_zone $server_name zone=lens_search_total:1m;
 limit_conn_zone $server_name zone=lens_models_total:1m;
@@ -81,9 +81,8 @@ server {{
     }}
     location {prefix}api/download/ {{
         limit_except GET {{ deny all; }}
-        limit_conn lens_bulk_ip 1;
-        limit_conn lens_bulk_total 4;
-        limit_rate 1m;
+        limit_conn lens_zip_total 16;
+        limit_conn lens_bulk_total 128;
         {proxy}
         proxy_buffering on;
         proxy_max_temp_file_size 0;
@@ -113,9 +112,7 @@ server {{
         internal;
         access_log /var/log/nginx/litchilens-transfers.log lens_transfer;
         alias /srv/litchilens/library-current/downloads/;
-        limit_conn lens_bulk_ip 1;
-        limit_conn lens_bulk_total 4;
-        limit_rate 1m;
+        limit_conn lens_bulk_total 128;
         max_ranges 1;
         add_header Cache-Control "no-store" always;
         add_header Content-Disposition attachment;
@@ -124,7 +121,6 @@ server {{
         alias /srv/litchilens/library-current/vendor/;
         limit_except GET {{ deny all; }}
         limit_conn lens_models_total 4;
-        limit_rate 256k;
         expires 7d;
     }}
     location @busy {{
@@ -147,6 +143,8 @@ def main():
     parser.add_argument('--site',required=True)
     parser.add_argument('--faces',required=True)
     args=parser.parse_args()
+    # 新版不设逐连接限速，发布前必须先启用共享出口流控。
+    run(['systemctl','is-active','--quiet','litchilens-bandwidth.service'])
     site=Path(args.site).resolve(strict=True)
     if not site.is_relative_to('/srv/litchilens/library-releases'):
         raise ValueError('只发布专用 library-releases 下已验证的目录')

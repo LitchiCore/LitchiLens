@@ -103,7 +103,7 @@ class Library:
                     try:self.downloads.pop(json.loads(line)['id'],None)
                     except (ValueError,KeyError):pass
                 self.log_offset=handle.tell()
-        return {'visitors':len(self.visitors),'downloads':len(self.downloads),'download_limit':4,'visitors_estimated':True,'revision':self.revision}
+        return {'visitors':len(self.visitors),'downloads':len(self.downloads),'download_limit':128,'visitors_estimated':True,'revision':self.revision}
 
     def visible(self, identity):
         return identity in self.photos and identity not in self.state['hidden']
@@ -260,11 +260,14 @@ def handler(library):
                         if kind not in ('jpg','nef','standard','edited','retouched'): raise ValueError('下载版本无效')
                         files = library.selected_files(ids,kind)
                         if not files: raise ValueError('所选照片没有此版本，或已经隐藏')
+                        if len(files)<=10:
+                            return self.reply(200,{'mode':'files','count':len(files),'missing':len(ids)-len(files),
+                                'files':[{'id':identity,'url':asset,'name':name} for identity,asset,name in files]})
                         library.tickets = {k:v for k,v in library.tickets.items() if v['expires']>time.time()}
                         if len(library.tickets)>2000: return self.reply(429,{'error':'下载繁忙，请稍后重试'})
                         token = secrets.token_urlsafe(24)
                         library.tickets[token] = {'ids':ids,'kind':kind,'expires':time.time()+1800}
-                        return self.reply(200,{'url':'api/download/'+token,'count':len(files),'missing':len(ids)-len(files)})
+                        return self.reply(200,{'mode':'zip','url':'api/download/'+token,'count':len(files),'missing':len(ids)-len(files)})
                     return self.reply(404,{'error':'操作不存在'})
             except (ValueError,TypeError,KeyError):
                 return self.reply(400,{'error':'请求无效，请检查所选照片、版本和填写内容'})

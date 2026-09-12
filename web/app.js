@@ -19,7 +19,7 @@ function visitorIdentity() {
   return '';
 }
 const visitor=visitorIdentity();
-async function traffic(){if(document.hidden)return;try{const r=await fetch(`api/presence?id=${visitor}`,{cache:'no-store'});if(!r.ok)throw Error();const t=await r.json();$('traffic').textContent=`在线约 ${t.visitors} 人 · 下载 ${t.downloads}/${t.download_limit}`;$('traffic').title='在线人数按最近 90 秒活跃浏览器估算，同一浏览器刷新和多标签页去重；下载为正在传输的任务数。';if(catalog&&t.revision!==catalog.revision&&!document.querySelector('dialog[open]'))await load();}catch{$('traffic').textContent='在线状态暂不可用';}}
+async function traffic(){if(document.hidden)return;try{const r=await fetch(`api/presence?id=${visitor}`,{cache:'no-store'});if(!r.ok)throw Error();const t=await r.json();$('traffic').textContent=`在线约 ${t.visitors} 人 · 下载 ${t.downloads}`;$('traffic').title='在线人数按最近 90 秒活跃浏览器估算，同一浏览器刷新和多标签页去重；下载为正在传输的任务数。';if(catalog&&t.revision!==catalog.revision&&!document.querySelector('dialog[open]'))await load();}catch{$('traffic').textContent='在线状态暂不可用';}}
 traffic();setInterval(traffic,20000);
 export async function post(route,data) {
   const response=await fetch(`api/${route}`,{method:'POST',headers:{'Content-Type':'application/json','X-LitchiLens':'1'},body:JSON.stringify(data)});
@@ -111,7 +111,7 @@ function feedback(ids) {
   actionIds=[...ids];$('reason').value='';$('feedback-status').textContent='';modal('feedback-dialog');
 }
 function download(ids,kind='jpg') {
-  actionIds=[...ids];$('download-kind').value=kind;$('zip-link').hidden=true;$('download-status').textContent='';$('prepare-download').hidden=false;
+  actionIds=[...ids];$('download-kind').value=kind;resetDownloads();$('download-status').textContent='';$('prepare-download').hidden=false;
   $('raw-note').hidden=kind!=='nef';modal('download-dialog');
 }
 async function route() {
@@ -130,10 +130,42 @@ $('batch-download').onclick=()=>download(selected);$('unhappy').onclick=()=>feed
 $('photo-unhappy').onclick=()=>feedback([filtered[current].id]);$('raw-open').onclick=()=>download([filtered[current].id],'nef');
 $('photo-version').onchange=showVersion;$('close').onclick=()=>$('viewer').close();
 $('previous').onclick=()=>openPhoto(current-1);$('next').onclick=()=>openPhoto(current+1);
-$('download-kind').onchange=()=>{$('raw-note').hidden=$('download-kind').value!=='nef';$('zip-link').hidden=true;$('prepare-download').hidden=false;};
+let downloadGeneration=0;
+function resetDownloads() {
+  downloadGeneration++;$('zip-link').hidden=true;$('download-all').hidden=true;$('download-files').replaceChildren();
+}
+$('download-kind').onchange=()=>{$('raw-note').hidden=$('download-kind').value!=='nef';resetDownloads();$('prepare-download').hidden=false;};
+$('download-all').onclick=async()=>{
+  const generation=downloadGeneration;
+  const links=[...$('download-files').querySelectorAll('a')];
+  $('download-all').disabled=true;
+  try {
+    for(const link of links) {
+      if(generation!==downloadGeneration || !$('download-dialog').open)break;
+      link.click();await new Promise(resolve=>setTimeout(resolve,400));
+    }
+  } finally {$('download-all').disabled=false;}
+};
 $('prepare-download').onclick=async()=>{
+  const generation=downloadGeneration;
   $('prepare-download').disabled=true;$('download-status').textContent='正在准备…';
-  try{const result=await post('download',{ids:actionIds,kind:$('download-kind').value});$('zip-link').href=result.url;$('zip-link').hidden=false;$('prepare-download').hidden=true;$('download-status').textContent=`包含 ${result.count} 张。${result.missing?`${result.missing} 张没有所选版本或已下架。`:''}点击保存 ZIP 开始下载。`;}
+  try{
+    const result=await post('download',{ids:actionIds,kind:$('download-kind').value});
+    if(generation!==downloadGeneration)return;
+    const missing=result.missing?`${result.missing} 张没有所选版本或已下架。`:'';
+    $('prepare-download').hidden=true;
+    if(result.mode==='files') {
+      for(const file of result.files) {
+        const link=document.createElement('a');link.href=safeAsset(file.url);link.download=file.name;link.textContent=`保存 ${file.name}`;link.className='button secondary';
+        $('download-files').append(link);
+      }
+      $('download-all').hidden=result.count<2;$('download-all').textContent=`全部下载 · ${result.count} 个文件`;
+      $('download-status').textContent=`${result.count} 个原文件，直接保存，不打包。${missing}${result.count>1?'若浏览器询问，请允许下载多个文件；也可以逐个点击下面的文件。':''}`;
+    } else {
+      $('zip-link').href=result.url;$('zip-link').hidden=false;
+      $('download-status').textContent=`${result.count} 个文件，超过 10 个已打包。${missing}点击保存 ZIP 开始下载。`;
+    }
+  }
   catch(e){$('download-status').textContent=e.message;}finally{$('prepare-download').disabled=false;}
 };
 $('submit-recolor').onclick=async()=>{

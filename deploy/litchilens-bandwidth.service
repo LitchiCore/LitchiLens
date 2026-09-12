@@ -1,0 +1,13 @@
+[Unit]
+Description=LitchiLens shared bandwidth
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/python3 /usr/local/lib/litchilens/bandwidth.py
+ExecStop=/usr/bin/python3 /usr/local/lib/litchilens/bandwidth.py --stop
+
+[Install]
+WantedBy=multi-user.target

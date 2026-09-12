@@ -29,9 +29,9 @@ node scripts/index_all_faces.mjs 'E:\衍生\网站' private/faces.json 4
 
 ## 不满意、下架与管理
 
-勾选照片后可以下载 ZIP，或填写最多 500 字的重调要求。留言只对管理员可见，绑定所选 ID。下架须二次确认，立即从目录和搜索结果中排除该 ID，并拒绝其 JPG、NEF、缩略图和预览链接。原文件保留；已经下载或缓存到设备上的文件不能撤回。
+勾选照片后，1～10 个可用文件直接下载，超过 10 个才打 ZIP；支持一键连续下载，也保留逐文件链接，供阻止连续下载的手机浏览器使用。也可以填写最多 500 字的重调要求。留言只对管理员可见，绑定所选 ID。下架须二次确认，立即从目录和搜索结果中排除该 ID，并拒绝其 JPG、NEF、缩略图和预览链接。原文件保留；已经下载或缓存到设备上的文件不能撤回。
 
-旧的固定 NEF 整包无法逐 ID 撤回，第二版部署会停用旧包入口，磁盘文件保留。批量下载改为依据当前可见 ID 生成流式 ZIP，每次最多 100 张，不在线转换原片。
+旧的固定 NEF 整包无法逐 ID 撤回，第二版部署会停用旧包入口，磁盘文件保留。大批量下载依据当前可见 ID 生成流式 ZIP，每次最多 100 张，不在线转换原片；缺失版本或已下架的照片不计入 10 个文件的打包门槛。
 
 管理页仅监听服务器 `127.0.0.1:8769`，不经公网 Nginx 暴露。使用 SSH 转发：
 
@@ -45,15 +45,17 @@ ssh -N -L 127.0.0.1:8769:127.0.0.1:8769 <服务器SSH别名>
 
 沿用第一版的专用证书和维护定时器，第二版由 `deploy/install_library.py` 安装。将完整网站放到服务器 `/srv/litchilens/library-releases/<版本>/`，私有人脸索引另行上传，再执行：
 
+首次使用共享限速时，先把 `deploy/bandwidth.py` 安装到 `/usr/local/lib/litchilens/bandwidth.py`，把 `deploy/litchilens-bandwidth.service` 放到 `/etc/systemd/system/`。创建 `/etc/litchilens/bandwidth.json`，内容为 `{"interface":"<出口网卡>","port":<相册端口>,"mbit":48}`，再执行 `sudo systemctl daemon-reload` 和 `sudo systemctl enable --now litchilens-bandwidth.service`。脚本仅接管默认 fq_codel 或自身队列，遇到其他流控配置会报错；停用服务恢复默认 fq_codel。新版相册安装器要求该服务已启用。
+
 ```sh
 sudo python3 deploy/install_library.py --site /srv/litchilens/library-releases/<版本> --faces /path/to/private-faces.json
 ```
 
 安装前备份 Nginx 和服务配置，检查 Nginx 配置，启动回环 API 后 reload，并校验证书链、有效期及地址匹配；失败回滚。首次安装证书仍可参考 [部署说明](deploy/README.md)，旧静态发布器不适用于第二版照片库。
 
-- 大文件全站最多 4 路，每 IP 1 路、每路 1MiB/s，合计约 4.2MB/s。
-- 模型全站最多 4 路，每路 256KiB/s，合计约 1MB/s；繁忙时自动重试。
-- 按约 7MB/s 上行预算，为缩略图和操作留出约 1.8MB/s；这不是链路级 QoS 保证，其他服务流量仍会影响带宽。
+- 网站端口共享 48Mbit/s（约 6MB/s）出口，取消逐连接固定限速。空闲连接可以使用全部额度；HTB 控制总量，fq_codel 按 TCP 流公平分配并照顾短请求，实际份额受客户端网络影响，不是严格按人数均分。
+- 大文件全站最多 128 路，其中流式 ZIP 最多 16 路，为 API 留出工作线程；取消每 IP 只能一路的限制。模型最多 4 路，不再设单连接速率。
+- 下载、预览和模型共同使用网站额度；按约 7MB/s 上行留约 1MB/s 链路余量。其他端口不受此队列限额约束，其他服务大量上传仍会影响网站速度。
 - 搜索最多并发 2 个，每 IP 每分钟 6 次；其他操作独立限流。
 - 在线人数按最近 90 秒活跃浏览器会话估算；下载计数跟踪正在传输的任务。状态仅保存在内存中。
 - 原图交给 Nginx 传输，隐藏检查由回环 API 处理，禁止直接访问内部文件路径。

@@ -59,11 +59,11 @@ class LibraryTest(unittest.TestCase):
             try:
                 ids=[photo['id']]
                 status,payload,_=request('api/download',{'ids':ids,'kind':'standard'});self.assertEqual(status,200)
-                ticket=json.loads(payload)['url'];status,payload,_=request(ticket)
+                result=json.loads(payload);self.assertEqual(result['mode'],'files')
+                ticket=result['files'][0]['url'];status,payload,headers=request(ticket)
                 self.assertEqual(status,200)
-                with zipfile.ZipFile(io.BytesIO(payload)) as archive:
-                    self.assertIsNone(archive.testzip());self.assertEqual(len(archive.namelist()),1)
-                    self.assertEqual(archive.read(archive.namelist()[0]),(site/versions[1]['jpg']['url']).read_bytes())
+                self.assertEqual(ticket,versions[1]['jpg']['url'])
+                self.assertEqual(headers['X-Accel-Redirect'],'/__litchilens_assets/'+ticket)
                 self.assertEqual(request('api/recolor',{'ids':ids,'reason':'提亮一点'})[0],200)
                 with ThreadPoolExecutor(max_workers=8) as pool:
                     statuses=list(pool.map(lambda n:request('api/recolor',{'ids':ids,'reason':f'并发留言 {n}'})[0],range(8)))
@@ -77,12 +77,48 @@ class LibraryTest(unittest.TestCase):
                 for version in versions:
                     for asset in (version['thumb'],version['preview'],version['jpg']['url']):self.assertEqual(request(asset)[0],404)
                 self.assertEqual(request(photo['nef']['url'])[0],404)
-                self.assertEqual(request(ticket)[0],410)
+                self.assertEqual(request(ticket)[0],404)
                 self.assertFalse(Library(site,state).visible(photo['id']))
                 self.assertEqual(len(json.loads(state.read_text())['requests']),9)
                 self.assertTrue(raw.exists())
                 raw.unlink()
                 with self.assertRaises(FileNotFoundError):Library(site,state)
+            finally:
+                server.shutdown();server.server_close();thread.join()
+
+    def test_download_file_threshold(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);(root/'downloads').mkdir();(root/'media').mkdir()
+            photos=[]
+            for n in range(11):
+                key=f'{n:064x}';jpg=f'downloads/{key}.jpg';preview=f'media/{key}-0.jpg'
+                Image.new('RGB',(8,8)).save(root/jpg);Image.new('RGB',(8,8)).save(root/preview)
+                raw=f'downloads/{key}.nef';(root/raw).write_bytes(b'raw')
+                photos.append({'id':f'2026-08-26_DSC_{n:04d}','versions':[{'label':'标准转换','jpg':{'url':jpg},'thumb':preview,'preview':preview}],
+                    'nef':{'url':raw} if n<10 else None})
+            (root/'catalog.json').write_text(json.dumps({'version':2,'photos':photos}))
+            library=Library(root,root/'state.json')
+            server=ThreadingHTTPServer(('127.0.0.1',0),handler(library))
+            thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+            base=f'http://127.0.0.1:{server.server_port}/'
+            def prepare(count,kind='jpg'):
+                req=Request(base+'api/download',data=json.dumps({'ids':[p['id'] for p in photos[:count]],'kind':kind}).encode(),
+                    headers={'Content-Type':'application/json','X-LitchiLens':'1'})
+                with urlopen(req) as response:return json.load(response)
+            try:
+                for count in (1,10):
+                    result=prepare(count);self.assertEqual(result['mode'],'files');self.assertEqual(len(result['files']),count)
+                    self.assertEqual(result['files'][0]['name'],photos[0]['id']+'.jpg')
+                raw=prepare(11,'nef');self.assertEqual(raw['mode'],'files');self.assertEqual(raw['missing'],1)
+                self.assertTrue(all(f['name'].endswith('.NEF') for f in raw['files']))
+                result=prepare(11);self.assertEqual(result['mode'],'zip')
+                # 链接生成后下架的 ID，也不能被旧 ZIP 链接继续导出。
+                library.state['hidden'][photos[0]['id']]={}
+                with urlopen(base+result['url']) as response:payload=response.read()
+                with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+                    self.assertIsNone(archive.testzip());self.assertEqual(len(archive.namelist()),10)
+                    self.assertNotIn(photos[0]['id']+'.jpg',archive.namelist())
+                    self.assertEqual(archive.read(photos[1]['id']+'.jpg'),(root/photos[1]['versions'][0]['jpg']['url']).read_bytes())
             finally:
                 server.shutdown();server.server_close();thread.join()
 
