@@ -13,7 +13,7 @@ from PIL import Image, ImageOps
 from thumbnails import FaceDetector, make_thumbnail
 
 ROOT = Path(__file__).resolve().parents[1]
-WEB_FILES = ('index.html', 'style.css', 'app.js', 'catalog.js', 'icon.svg')
+WEB_FILES = ('index.html', 'style.css', 'app.js', 'catalog.js', 'icon.svg', 'packages.html', 'packages.js', 'packages-data.js', 'packages.css')
 PIPELINE = 'thumb-yunet-v1'
 
 

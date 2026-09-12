@@ -12,7 +12,9 @@
 - JPG/NEF 配对、歧义报告、无效文件检查，失败保留旧索引。
 - 等待照片页面、Nginx 部署、下载限速和并发限制、IPv6 证书维护。
 
-人脸检测只用于构图，不提取身份特征、不保存人脸框。“找同一个人的其他照片”和批量 ZIP 下载尚未实现。
+人脸检测只用于构图，不提取身份特征、不保存人脸框。“找同一个人的其他照片”尚未实现。
+
+NEF 分包页支持下载提前准备好的 ZIP，显示包号、张数、大小、日期范围和 SHA-256，并可复制全部链接供下载工具使用。访问端口下的 `/nef` 即可进入；ZIP 单独存放，不随相册更新反复复制。
 
 ## 准备环境
 
@@ -87,7 +89,7 @@ Linux 对应使用 `.venv/bin/python`。模型来自 [OpenCV Zoo](https://github
 
 ```powershell
 python -m unittest discover -s tests -v
-node --test tests/catalog.test.js
+node --test tests/*.test.js
 node --check web/app.js
 node --check web/catalog.js
 ```

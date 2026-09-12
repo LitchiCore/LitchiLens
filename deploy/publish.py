@@ -23,7 +23,7 @@ def stage(site, release, token):
             if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(site.resolve()): raise ValueError('照片文件不存在或越界')
             assets.add(value)
     destination=release/token; destination.mkdir(parents=True)
-    for name in ('index.html','catalog.json','style.css','app.js','catalog.js','icon.svg','robots.txt',*sorted(assets)):
+    for name in ('index.html','catalog.json','style.css','app.js','catalog.js','icon.svg','robots.txt','packages.html','packages.js','packages-data.js','packages.css',*sorted(assets)):
         target=destination/name; target.parent.mkdir(parents=True,exist_ok=True)
         shutil.copyfile(site/name,target); target.chmod(0o644)
     for name in ('media','downloads'): (destination/name).mkdir(exist_ok=True)

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive"><meta name="theme-color" content="#101913">
+  <meta name="description" content="军训 NEF 原片按每100张分包下载，支持断点续传。">
+  <title>NEF 分包下载 · 荔枝镜头</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="packages.css">
+  <script type="module" src="packages.js"></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="./"><img src="icon.svg" width="28" height="28" alt="">荔枝镜头 <span>LITCHILENS</span></a><a class="edition" href="./">返回照片相册</a></header>
+  <main>
+    <section class="intro"><div><p class="eyebrow">原片分享 · 每包最多 100 张</p><h1>NEF 分包下载<span class="title-dot">.</span></h1><p>按需下载，保留完整原片和原来的日期目录。</p></div></section>
+    <div class="bundle-tools"><p id="summary" class="muted">正在读取分包信息…</p><button id="copy" class="button secondary" type="button" disabled>复制全部下载链接</button></div>
+    <p class="bundle-hint">文件较大，建议使用电脑下载。支持断点续传；批量下载时建议同时下载 1–2 包，不必一直打开此页面。</p>
+    <p id="notice" role="status" aria-live="polite"></p>
+    <textarea id="links" rows="6" readonly aria-label="全部下载链接，可手动复制" hidden></textarea>
+    <section id="packages" aria-label="分包列表" class="packages"></section>
+    <div id="bundle-empty" class="empty" hidden><h2>暂无可下载的分包</h2><p>分包上传完成后会显示在这里。</p><button id="reload" class="button secondary" type="button">重新加载</button></div>
+    <aside class="download-note"><span>解压说明</span><p>每个 ZIP 都可独立解压。把各包解压到同一个文件夹，即可按日期合并原片。NEF 是相机原始格式，适合使用 Lightroom、Photoshop 或 Nikon NX Studio 处理。</p></aside>
+  </main>
+  <footer><span>荔枝镜头 · 军训影集</span><span>下载速度取决于双方网络和同时下载人数</span></footer>
+</body>
+</html>

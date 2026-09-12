@@ -51,6 +51,9 @@ def main():
         (root/'current').symlink_to(release,target_is_directory=True)
     for item in root.rglob('*'):
         if not item.is_symlink(): item.chmod(0o755 if item.is_dir() else 0o644)
+    bundles=root/'bundles'; bundles.mkdir(exist_ok=True)
+    if not (bundles/'packages.json').exists():
+        (bundles/'packages.json').write_text('{"version":1,"packages":[]}')
     nginx=Path('/etc/nginx/sites-available/litchilens')
     nginx.write_text(f'''# 荔枝镜头专用站点，分享路径不是身份认证。
 limit_conn_zone $binary_remote_addr zone=litchilens_per_ip:10m;
@@ -73,6 +76,7 @@ server {{
     add_header Referrer-Policy no-referrer always;
     add_header Content-Security-Policy "default-src 'self'; img-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'" always;
     location = / {{ return 302 /{token}/; }}
+    location = /nef {{ return 302 /{token}/packages.html; }}
     location / {{ return 404; }}
     location = /robots.txt {{ default_type text/plain; return 200 "User-agent: *\\nDisallow: /\\n"; }}
     location = /{token} {{ return 302 /{token}/; }}
@@ -86,6 +90,18 @@ server {{
         limit_except GET {{ deny all; }}
         try_files $uri =404;
         expires 30d;
+    }}
+    location /{token}/bundles/ {{
+        alias /srv/litchilens/bundles/;
+        limit_except GET {{ deny all; }}
+        limit_conn litchilens_per_ip 2;
+        limit_conn litchilens_total 4;
+        limit_rate 6m;
+        max_ranges 1;
+        default_type application/octet-stream;
+        add_header Content-Disposition attachment;
+        add_header X-Content-Type-Options nosniff always;
+        add_header X-Robots-Tag "noindex, nofollow, noarchive" always;
     }}
     location /{token}/downloads/ {{
         limit_except GET {{ deny all; }}
