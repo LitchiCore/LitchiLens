@@ -95,6 +95,10 @@ class LibraryTest(unittest.TestCase):
             library.downloads['a'*32]=time.time()
             status=library.traffic('12345678-1234-1234-1234-123456789abc')
             self.assertEqual(status['downloads'],1);self.assertEqual(status['visitors'],1)
+            for _ in range(5):
+                self.assertEqual(library.traffic('12345678-1234-1234-1234-123456789abc')['visitors'],1)
+            self.assertEqual(library.traffic('')['visitors'],1)
+            self.assertEqual(library.traffic('87654321-1234-1234-1234-123456789abc')['visitors'],2)
             log.write_text(json.dumps({'id':'a'*32})+'\n')
             self.assertEqual(library.traffic()['downloads'],0)
             library.visitors={k:v-100 for k,v in library.visitors.items()}

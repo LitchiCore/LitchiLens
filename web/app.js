@@ -3,8 +3,23 @@ const $ = id => document.getElementById(id);
 let catalog, filtered=[], shown=0, day='', current=-1, selected=new Set(), actionIds=[], matches=null, loading;
 let lastFocus;
 const pageSize=48;
-const visitor=crypto.randomUUID();
-async function traffic(){if(document.hidden)return;try{const r=await fetch(`api/presence?id=${visitor}`,{cache:'no-store'});if(!r.ok)throw Error();const t=await r.json();$('traffic').textContent=`在线约 ${t.visitors} 人 · 下载 ${t.downloads}/${t.download_limit}`;$('traffic').title='在线人数按最近 90 秒活跃浏览器会话估算；下载为正在传输的任务数。';if(catalog&&t.revision!==catalog.revision&&!document.querySelector('dialog[open]'))await load();}catch{$('traffic').textContent='在线状态暂不可用';}}
+function visitorIdentity() {
+  // 同一浏览器跨刷新、跨标签页复用匿名标识，不记录身份信息。
+  for (const storageName of ['localStorage','sessionStorage']) {
+    try {
+      const storage=window[storageName], key='litchilens-visitor';
+      let id=storage.getItem(key);
+      if (!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(id || '')) {
+        id=crypto.randomUUID();storage.setItem(key,id);
+      }
+      return id;
+    } catch { /* 禁用持久存储时尝试标签页会话存储。 */ }
+  }
+  // 两种存储都不可用时只读取人数，避免每次刷新制造新访客。
+  return '';
+}
+const visitor=visitorIdentity();
+async function traffic(){if(document.hidden)return;try{const r=await fetch(`api/presence?id=${visitor}`,{cache:'no-store'});if(!r.ok)throw Error();const t=await r.json();$('traffic').textContent=`在线约 ${t.visitors} 人 · 下载 ${t.downloads}/${t.download_limit}`;$('traffic').title='在线人数按最近 90 秒活跃浏览器估算，同一浏览器刷新和多标签页去重；下载为正在传输的任务数。';if(catalog&&t.revision!==catalog.revision&&!document.querySelector('dialog[open]'))await load();}catch{$('traffic').textContent='在线状态暂不可用';}}
 traffic();setInterval(traffic,20000);
 export async function post(route,data) {
   const response=await fetch(`api/${route}`,{method:'POST',headers:{'Content-Type':'application/json','X-LitchiLens':'1'},body:JSON.stringify(data)});
