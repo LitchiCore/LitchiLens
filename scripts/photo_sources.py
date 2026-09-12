@@ -14,12 +14,12 @@ def collect(source, exports=None, generated=None):
         records[identity] = {'id': identity, 'name': key.upper(), 'date': day, 'raw': raw, 'versions': []}
         by_key[key].append(identity)
     unmatched, ambiguous = [], []
-    roots = [(source / 'jpg', '精修', 0)]
+    roots = [(source / 'jpg', '精调', 0)]
     if exports:
         roots.append((exports, '批量调色', 1))
     if generated:
         roots.append((generated, '标准转换', 2))
-    # 日期目录自带的 JPG 作为相机 JPG，不误标成精修。
+    # 日期目录自带的 JPG 作为相机 JPG，不误标成精调。
     roots.extend((directory, '相机 JPG', 3) for directory in source.iterdir()
                  if directory.is_dir() and directory.name[:4].isdigit())
     for root, label, priority in roots:

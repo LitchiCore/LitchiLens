@@ -72,6 +72,13 @@ server {{
         {proxy}
         proxy_pass http://127.0.0.1:8766/api/search;
     }}
+    # 精确匹配创建请求，避免下方尾斜杠 location 自动重定向 POST。
+    location = {prefix}api/download {{
+        limit_except POST {{ deny all; }}
+        limit_req zone=lens_actions burst=5 nodelay;
+        {proxy}
+        proxy_pass http://127.0.0.1:8766/api/download;
+    }}
     location {prefix}api/download/ {{
         limit_except GET {{ deny all; }}
         limit_conn lens_bulk_ip 1;

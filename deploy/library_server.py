@@ -116,7 +116,7 @@ class Library:
 
     def selected_files(self, ids, kind):
         result = []
-        labels = {'standard':'标准转换','edited':'批量调色','retouched':'精修'}
+        labels = {'standard':'标准转换','edited':'批量调色','retouched':'精调'}
         for identity in ids:
             if not self.visible(identity):
                 continue

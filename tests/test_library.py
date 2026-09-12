@@ -40,7 +40,7 @@ class LibraryTest(unittest.TestCase):
             root=Path(tmp);site=root/'site';site.mkdir()
             for folder in ('media','downloads'):(site/folder).mkdir()
             versions=[]
-            for n,label in enumerate(('精修','标准转换')):
+            for n,label in enumerate(('精调','标准转换')):
                 key=str(n)*64
                 for suffix in ('-0.jpg','-1.jpg'):Image.new('RGB',(32,32)).save(site/'media'/(key+suffix))
                 Image.new('RGB',(32,32)).save(site/'downloads'/(key+'.jpg'))
