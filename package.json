@@ -4,7 +4,10 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "check": "node --check web/app.js && node --check web/catalog.js && node --check web/find-face.js && node --check web/face-config.js && node --check scripts/index_faces.mjs && node --check scripts/index_all_faces.mjs && node --check scripts/preview_library.mjs"
+    "check": "node --check web/app.js && node --check web/catalog.js && node --check web/find-face.js && node --check web/face-config.js && node --check scripts/index_faces.mjs && node --check scripts/index_all_faces.mjs && node --check scripts/preview_library.mjs",
+    "format": "prettier --write \"web/**/*.{js,html,css}\" \"scripts/*.mjs\" \"tests/*.js\" \"deploy/admin.html\" \"*.md\" \"deploy/*.md\" \"*.json\" \".github/**/*.yml\"",
+    "format:check": "prettier --check \"web/**/*.{js,html,css}\" \"scripts/*.mjs\" \"tests/*.js\" \"deploy/admin.html\" \"*.md\" \"deploy/*.md\" \"*.json\" \".github/**/*.yml\"",
+    "smoke": "node scripts/smoke_test.mjs"
   },
   "dependencies": {
     "@tensorflow/tfjs-backend-wasm": "4.22.0",
@@ -13,6 +16,9 @@
     "sharp": "0.35.4"
   },
   "devDependencies": {
-    "playwright": "1.58.2"
-  }
+    "playwright": "1.58.2",
+    "prettier": "3.6.2"
+  },
+  "description": "面向活动照片临时分享的轻量照片库：多版本照片、浏览器本地自拍检索、IPv6 HTTPS 与共享带宽。",
+  "license": "MIT"
 }

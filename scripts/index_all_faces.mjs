@@ -1,20 +1,47 @@
-import {spawn} from 'node:child_process';
+import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-const [site,output,workersArg='4']=process.argv.slice(2);
-if(!site||!output)throw Error('参数：站点目录 私有人脸索引 [进程数]');
-const workers=Number(workersArg);
-if(!Number.isInteger(workers)||workers<1||workers>8)throw Error('进程数应为 1 至 8');
-fs.mkdirSync(path.dirname(output),{recursive:true});
-const jobs=Array.from({length:workers},(_,i)=>new Promise((resolve,reject)=>{
-  const child=spawn(process.execPath,['scripts/index_faces.mjs',site,`${output}.part-${i}.json`,'0',String(i),String(workers)],{stdio:['ignore','pipe','inherit'],windowsHide:true});
-  child.stdout.on('data',chunk=>process.stdout.write(`[${i+1}/${workers}] ${chunk}`));
-  child.on('error',reject);child.on('close',code=>code===0?resolve():reject(Error(`索引进程 ${i+1} 失败：${code}`)));
-}));
+const [site, output, workersArg = '4'] = process.argv.slice(2);
+if (!site || !output) throw Error('参数：站点目录 私有人脸索引 [进程数]');
+const workers = Number(workersArg);
+if (!Number.isInteger(workers) || workers < 1 || workers > 8) throw Error('进程数应为 1 至 8');
+fs.mkdirSync(path.dirname(output), { recursive: true });
+const jobs = Array.from(
+  { length: workers },
+  (_, i) =>
+    new Promise((resolve, reject) => {
+      const child = spawn(
+        process.execPath,
+        [
+          'scripts/index_faces.mjs',
+          site,
+          `${output}.part-${i}.json`,
+          '0',
+          String(i),
+          String(workers),
+        ],
+        { stdio: ['ignore', 'pipe', 'inherit'], windowsHide: true },
+      );
+      child.stdout.on('data', (chunk) => process.stdout.write(`[${i + 1}/${workers}] ${chunk}`));
+      child.on('error', reject);
+      child.on('close', (code) =>
+        code === 0 ? resolve() : reject(Error(`索引进程 ${i + 1} 失败：${code}`)),
+      );
+    }),
+);
 await Promise.all(jobs);
-const parts=Array.from({length:workers},(_,i)=>JSON.parse(fs.readFileSync(`${output}.part-${i}.json`)));
-const photos=parts.flatMap(p=>p.photos).sort((a,b)=>a.id.localeCompare(b.id));
-const catalog=JSON.parse(fs.readFileSync(path.join(site,'catalog.json')));
-if(new Set(photos.map(p=>p.id)).size!==catalog.photos.length||photos.length!==catalog.photos.length)throw Error('人脸索引未覆盖全部照片 ID');
-fs.writeFileSync(output+'.tmp',JSON.stringify({...parts[0],photos}));fs.renameSync(output+'.tmp',output);
-console.log(`索引完成：${photos.length} 个照片 ID，${photos.reduce((n,p)=>n+p.faces.length,0)} 张脸`);
+const parts = Array.from({ length: workers }, (_, i) =>
+  JSON.parse(fs.readFileSync(`${output}.part-${i}.json`)),
+);
+const photos = parts.flatMap((p) => p.photos).sort((a, b) => a.id.localeCompare(b.id));
+const catalog = JSON.parse(fs.readFileSync(path.join(site, 'catalog.json')));
+if (
+  new Set(photos.map((p) => p.id)).size !== catalog.photos.length ||
+  photos.length !== catalog.photos.length
+)
+  throw Error('人脸索引未覆盖全部照片 ID');
+fs.writeFileSync(output + '.tmp', JSON.stringify({ ...parts[0], photos }));
+fs.renameSync(output + '.tmp', output);
+console.log(
+  `索引完成：${photos.length} 个照片 ID，${photos.reduce((n, p) => n + p.faces.length, 0)} 张脸`,
+);

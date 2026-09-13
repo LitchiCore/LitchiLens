@@ -1,53 +1,232 @@
 <!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex,nofollow,noarchive"><meta name="theme-color" content="#101913">
-  <title>军训影集 · LitchiLens</title>
-  <link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="library.css"><link rel="stylesheet" href="sponsor.css?v=support-2">
-  <script type="module" src="app.js?v=downloads-2"></script>
-</head>
-<body>
-  <header class="topbar"><a class="brand" href="#home" aria-label="LitchiLens 首页"><img src="icon.svg" width="28" height="28" alt="">LitchiLens</a><span id="traffic" class="muted" aria-live="polite">正在连接…</span><nav class="header-links" aria-label="网站导航"><a class="edition" href="#library">照片库 ↗</a><button class="support-link" data-support-open type="button">自愿赞赏</button></nav></header>
-  <main>
-    <section id="home" class="home">
-      <p class="eyebrow">OUR DAYS, TOGETHER</p><h1>那些在场的瞬间<span class="title-dot">.</span></h1>
-      <p class="home-lead">军训会结束，照片会替我们记住。找到自己，也把喜欢的瞬间带走。</p>
-      <div class="home-choices"><a href="#library" class="choice"><span>01 / EXPLORE</span><h2>逛逛照片库 →</h2><p>按日期浏览，选择喜欢的版本，下载高清照片。</p></a><a href="#find" class="choice"><span>02 / FIND ME</span><h2>用自拍找照片 →</h2><p>在手机本地提取人脸特征，找找可能有你的照片。</p></a></div>
-      <aside class="kind-note">照片没拍好，是我的拍摄和调色还需努力，不是你的问题。欢迎告诉我怎么改，也可以选择下架。</aside>
-    </section>
-    <section id="find" class="find-panel" hidden>
-      <a class="button secondary" href="#home">← 回首页</a>
-      <p class="eyebrow">FIND YOUR MOMENTS</p><h1>找找照片里的你<span class="title-dot">.</span></h1>
-      <p>请选择你自己的清晰正脸自拍。照片留在此设备中，仅发送人脸特征用于匹配；服务器不保存本次查询特征。</p>
-      <p class="muted">首次使用需要下载约 12MB 模型。结果是相似候选，侧脸、遮挡和远距离合照可能漏掉。</p>
-      <label class="button primary" for="selfie">选择一张自拍</label><input id="selfie" type="file" accept="image/jpeg,image/png,image/webp" hidden>
-      <p id="face-status" role="status" aria-live="polite"></p><div id="face-choices" class="face-choices"></div>
-      <button id="clear-face" class="button secondary" type="button" hidden>清除本次自拍</button>
-    </section>
-    <section id="library" hidden>
-      <a class="button secondary" href="#home">← 回首页</a>
-      <div class="intro"><div><p class="eyebrow">OUR PHOTO LIBRARY</p><h1>军训影集<span class="title-dot">.</span></h1><p>一个照片 ID，保留不同版本。默认下载精调或批量调色 JPG。</p></div><div class="total"><strong id="total">—</strong><span>个照片 ID</span></div></div>
-      <section class="album" aria-label="照片浏览">
-        <div class="tools"><div class="section-title"><span class="line"></span><h2 id="list-title">全部照片</h2><span id="result-count" class="muted"></span></div><label class="search"><input id="search" type="search" placeholder="搜索照片 ID / DSC 编号" aria-label="搜索照片编号" maxlength="100"></label></div>
-        <nav id="dates" class="dates" aria-label="拍摄日期"></nav>
-        <div class="filters"><label>版本 <select id="version-filter"><option value="">全部版本</option><option>精调</option><option>批量调色</option><option>标准转换</option><option>相机 JPG</option></select></label><button id="clear-matches" class="button secondary" hidden>退出人脸筛选</button><button id="select-page" class="button secondary">勾选已显示照片</button></div>
-        <p id="status" role="status" aria-live="polite"></p><div id="gallery" class="gallery"></div>
-        <button id="more" class="button more" hidden>加载更多照片</button>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <meta name="theme-color" content="#101913" />
+    <title>军训影集 · LitchiLens</title>
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="library.css" />
+    <link rel="stylesheet" href="sponsor.css?v=support-2" />
+    <script type="module" src="app.js?v=downloads-2"></script>
+  </head>
+  <body data-support="off">
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="LitchiLens 首页"
+        ><img src="icon.svg" width="28" height="28" alt="" />LitchiLens</a
+      ><span id="traffic" class="muted" aria-live="polite">正在连接…</span>
+      <nav class="header-links" aria-label="网站导航">
+        <a class="edition" href="#library">照片库 ↗</a
+        ><button class="support-link" data-support-open type="button">自愿赞赏</button>
+      </nav>
+    </header>
+    <main>
+      <section id="home" class="home">
+        <p class="eyebrow">OUR DAYS, TOGETHER</p>
+        <h1>那些在场的瞬间<span class="title-dot">.</span></h1>
+        <p class="home-lead">军训会结束，照片会替我们记住。找到自己，也把喜欢的瞬间带走。</p>
+        <div class="home-choices">
+          <a href="#library" class="choice"
+            ><span>01 / EXPLORE</span>
+            <h2>逛逛照片库 →</h2>
+            <p>按日期浏览，选择喜欢的版本，下载高清照片。</p></a
+          ><a href="#find" class="choice"
+            ><span>02 / FIND ME</span>
+            <h2>用自拍找照片 →</h2>
+            <p>在手机本地提取人脸特征，找找可能有你的照片。</p></a
+          >
+        </div>
+        <aside class="kind-note">
+          照片没拍好，是我的拍摄和调色还需努力，不是你的问题。欢迎告诉我怎么改，也可以选择下架。
+        </aside>
       </section>
-      <aside class="download-note"><span>关于照片</span><p>标准转换不套调色风格，批量调色和精调可按喜好选择。会使用 Photoshop / Lightroom，或想自己调色？可选择 NEF 原片。不同版本共用一个 ID，下架会隐藏全部版本。</p></aside>
-    </section>
-  </main>
-  <div id="selection" class="selection" hidden><span id="selection-count"></span><button id="batch-download" class="button primary">下载所选</button><button id="unhappy" class="button secondary">不满意</button><button id="clear-selection" class="button secondary">取消勾选</button></div>
-  <footer><span>LitchiLens · 军训影集</span><button id="support-open" class="support-link" data-support-open type="button">请拍摄者喝杯水 · 自愿</button><span id="updated">留住每一个在场的瞬间</span></footer>
-  <dialog id="support-dialog" aria-labelledby="support-title"><div class="form-dialog"><h2 id="support-title">谢谢你的心意</h2><p>照片免费分享，喜欢就带走。本站运行电费约 ¥1/天。想请我喝杯水的话，谢谢你的心意；不赞赏也完全没关系。</p><img id="support-image" class="support-image" alt="拍摄者的微信赞赏码"><p class="muted">可以保存图片后在微信中识别。赞赏不会影响照片下载或调色申请的处理。</p><button class="button secondary" data-close="support-dialog">继续看照片</button></div></dialog>
-  <dialog id="viewer" aria-labelledby="photo-title">
-    <div class="viewer-head"><div><h2 id="photo-title"></h2><p id="photo-date"></p></div><button id="close" class="icon-button" aria-label="关闭大图">✕</button></div>
-    <div class="image-stage"><button id="previous" class="icon-button previous" aria-label="上一张">‹</button><img id="large" alt=""><button id="next" class="icon-button next" aria-label="下一张">›</button></div>
-    <div class="viewer-bottom"><label>照片版本 <select id="photo-version"></select></label><div class="download-actions"><button id="photo-unhappy" class="button secondary">这张不满意</button><a id="download-jpg" class="button primary">下载 JPG</a><button id="raw-open" class="button secondary">想自己调色？</button></div></div>
-  </dialog>
-  <dialog id="download-dialog" aria-labelledby="download-title"><div class="form-dialog"><h2 id="download-title">把照片带走</h2><p>默认选择 JPG，手机即可查看和保存。1～10 个文件直接下载，超过 10 个才打包 ZIP。</p><label>下载版本 <select id="download-kind"><option value="jpg">JPG · 优先精调 / 批量调色</option><option value="standard">JPG · 标准转换</option><option value="edited">JPG · 批量调色</option><option value="retouched">JPG · 精调</option><option value="nef">NEF · RAW 原片</option></select></label><p id="raw-note" class="muted" hidden>适合会使用 Photoshop / Lightroom、想自行调色的同学。NEF 文件较大，通常需要专业软件打开。</p><p id="download-status" role="status"></p><a id="zip-link" class="button primary" hidden>保存 ZIP</a><button id="download-all" class="button primary" type="button" hidden>全部下载</button><div id="download-files" class="dialog-actions"></div><div class="dialog-actions"><button id="prepare-download" class="button primary">生成下载链接</button><button class="button secondary" data-close="download-dialog">关闭</button></div></div></dialog>
-  <dialog id="feedback-dialog" aria-labelledby="feedback-title"><div class="form-dialog"><h2 id="feedback-title">这张照片，还可以更好</h2><p class="kind-note">照片没拍好，是我的拍摄和调色还需努力，不是你的问题。欢迎告诉我怎么改，也可以选择下架。</p><label for="reason">希望怎么重新调色？</label><textarea id="reason" maxlength="500" rows="4" placeholder="例如：有点偏黄，希望自然一点；人脸太暗，希望提亮。"></textarea><p id="feedback-status" role="status"></p><div class="dialog-actions"><button id="submit-recolor" class="button primary">提交重新调色</button><button id="ask-hide" class="button danger">删除 / 下架</button><button class="button secondary" data-close="feedback-dialog">取消</button></div></div></dialog>
-  <dialog id="hide-dialog" aria-labelledby="hide-title"><div class="form-dialog"><h2 id="hide-title">再次确认：从网站下架？</h2><p id="hide-summary"></p><p>这些 ID 的所有 JPG 版本和 NEF 都将立即停止向所有人展示和提供下载。原文件由拍摄者保留。已下载的文件无法撤回。</p><label class="confirm-line"><input type="checkbox" id="hide-confirm">我确认下架所选照片的全部版本</label><p id="hide-status" role="status"></p><div class="dialog-actions"><button id="submit-hide" class="button danger" disabled>确认下架</button><button class="button secondary" data-close="hide-dialog">再想想</button></div></div></dialog>
-  <noscript><p class="status">请启用 JavaScript 后使用照片库。</p></noscript>
-</body></html>
+      <section id="find" class="find-panel" hidden>
+        <a class="button secondary" href="#home">← 回首页</a>
+        <p class="eyebrow">FIND YOUR MOMENTS</p>
+        <h1>找找照片里的你<span class="title-dot">.</span></h1>
+        <p>
+          请选择你自己的清晰正脸自拍。照片留在此设备中，仅发送人脸特征用于匹配；服务器不保存本次查询特征。
+        </p>
+        <p class="muted">
+          首次使用需要下载约 12MB 模型。结果是相似候选，侧脸、遮挡和远距离合照可能漏掉。
+        </p>
+        <label class="button primary" for="selfie">选择一张自拍</label
+        ><input id="selfie" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+        <p id="face-status" role="status" aria-live="polite"></p>
+        <div id="face-choices" class="face-choices"></div>
+        <button id="clear-face" class="button secondary" type="button" hidden>清除本次自拍</button>
+      </section>
+      <section id="library" hidden>
+        <a class="button secondary" href="#home">← 回首页</a>
+        <div class="intro">
+          <div>
+            <p class="eyebrow">OUR PHOTO LIBRARY</p>
+            <h1>军训影集<span class="title-dot">.</span></h1>
+            <p>一个照片 ID，保留不同版本。默认下载精调或批量调色 JPG。</p>
+          </div>
+          <div class="total"><strong id="total">—</strong><span>个照片 ID</span></div>
+        </div>
+        <section class="album" aria-label="照片浏览">
+          <div class="tools">
+            <div class="section-title">
+              <span class="line"></span>
+              <h2 id="list-title">全部照片</h2>
+              <span id="result-count" class="muted"></span>
+            </div>
+            <label class="search"
+              ><input
+                id="search"
+                type="search"
+                placeholder="搜索照片 ID / DSC 编号"
+                aria-label="搜索照片编号"
+                maxlength="100"
+            /></label>
+          </div>
+          <nav id="dates" class="dates" aria-label="拍摄日期"></nav>
+          <div class="filters">
+            <label
+              >版本
+              <select id="version-filter">
+                <option value="">全部版本</option>
+                <option>精调</option>
+                <option>批量调色</option>
+                <option>标准转换</option>
+                <option>相机 JPG</option>
+              </select></label
+            ><button id="clear-matches" class="button secondary" hidden>退出人脸筛选</button
+            ><button id="select-page" class="button secondary">勾选已显示照片</button>
+          </div>
+          <p id="status" role="status" aria-live="polite"></p>
+          <div id="gallery" class="gallery"></div>
+          <button id="more" class="button more" hidden>加载更多照片</button>
+        </section>
+        <aside class="download-note">
+          <span>关于照片</span>
+          <p>
+            标准转换不套调色风格，批量调色和精调可按喜好选择。会使用 Photoshop /
+            Lightroom，或想自己调色？可选择 NEF 原片。不同版本共用一个 ID，下架会隐藏全部版本。
+          </p>
+        </aside>
+      </section>
+    </main>
+    <div id="selection" class="selection" hidden>
+      <span id="selection-count"></span
+      ><button id="batch-download" class="button primary">下载所选</button
+      ><button id="unhappy" class="button secondary">不满意</button
+      ><button id="clear-selection" class="button secondary">取消勾选</button>
+    </div>
+    <footer>
+      <span>LitchiLens · 军训影集</span
+      ><button id="support-open" class="support-link" data-support-open type="button">
+        请拍摄者喝杯水 · 自愿</button
+      ><span id="updated">留住每一个在场的瞬间</span>
+    </footer>
+    <dialog id="support-dialog" aria-labelledby="support-title">
+      <div class="form-dialog">
+        <h2 id="support-title">谢谢你的心意</h2>
+        <p>
+          照片免费分享，喜欢就带走。本站运行电费约
+          ¥1/天。想请我喝杯水的话，谢谢你的心意；不赞赏也完全没关系。
+        </p>
+        <img id="support-image" class="support-image" alt="拍摄者的微信赞赏码" />
+        <p class="muted">可以保存图片后在微信中识别。赞赏不会影响照片下载或调色申请的处理。</p>
+        <button class="button secondary" data-close="support-dialog">继续看照片</button>
+      </div>
+    </dialog>
+    <dialog id="viewer" aria-labelledby="photo-title">
+      <div class="viewer-head">
+        <div>
+          <h2 id="photo-title"></h2>
+          <p id="photo-date"></p>
+        </div>
+        <button id="close" class="icon-button" aria-label="关闭大图">✕</button>
+      </div>
+      <div class="image-stage">
+        <button id="previous" class="icon-button previous" aria-label="上一张">‹</button
+        ><img id="large" alt="" /><button id="next" class="icon-button next" aria-label="下一张">
+          ›
+        </button>
+      </div>
+      <div class="viewer-bottom">
+        <label
+          >照片版本
+          <select id="photo-version"></select
+        ></label>
+        <div class="download-actions">
+          <button id="photo-unhappy" class="button secondary">这张不满意</button
+          ><a id="download-jpg" class="button primary">下载 JPG</a
+          ><button id="raw-open" class="button secondary">想自己调色？</button>
+        </div>
+      </div>
+    </dialog>
+    <dialog id="download-dialog" aria-labelledby="download-title">
+      <div class="form-dialog">
+        <h2 id="download-title">把照片带走</h2>
+        <p>默认选择 JPG，手机即可查看和保存。1～10 个文件直接下载，超过 10 个才打包 ZIP。</p>
+        <label
+          >下载版本
+          <select id="download-kind">
+            <option value="jpg">JPG · 优先精调 / 批量调色</option>
+            <option value="standard">JPG · 标准转换</option>
+            <option value="edited">JPG · 批量调色</option>
+            <option value="retouched">JPG · 精调</option>
+            <option value="nef">NEF · RAW 原片</option>
+          </select></label
+        >
+        <p id="raw-note" class="muted" hidden>
+          适合会使用 Photoshop / Lightroom、想自行调色的同学。NEF 文件较大，通常需要专业软件打开。
+        </p>
+        <p id="download-status" role="status"></p>
+        <a id="zip-link" class="button primary" hidden>保存 ZIP</a
+        ><button id="download-all" class="button primary" type="button" hidden>全部下载</button>
+        <div id="download-files" class="dialog-actions"></div>
+        <div class="dialog-actions">
+          <button id="prepare-download" class="button primary">生成下载链接</button
+          ><button class="button secondary" data-close="download-dialog">关闭</button>
+        </div>
+      </div>
+    </dialog>
+    <dialog id="feedback-dialog" aria-labelledby="feedback-title">
+      <div class="form-dialog">
+        <h2 id="feedback-title">这张照片，还可以更好</h2>
+        <p class="kind-note">
+          照片没拍好，是我的拍摄和调色还需努力，不是你的问题。欢迎告诉我怎么改，也可以选择下架。
+        </p>
+        <label for="reason">希望怎么重新调色？</label
+        ><textarea
+          id="reason"
+          maxlength="500"
+          rows="4"
+          placeholder="例如：有点偏黄，希望自然一点；人脸太暗，希望提亮。"
+        ></textarea>
+        <p id="feedback-status" role="status"></p>
+        <div class="dialog-actions">
+          <button id="submit-recolor" class="button primary">提交重新调色</button
+          ><button id="ask-hide" class="button danger">删除 / 下架</button
+          ><button class="button secondary" data-close="feedback-dialog">取消</button>
+        </div>
+      </div>
+    </dialog>
+    <dialog id="hide-dialog" aria-labelledby="hide-title">
+      <div class="form-dialog">
+        <h2 id="hide-title">再次确认：从网站下架？</h2>
+        <p id="hide-summary"></p>
+        <p>
+          这些 ID 的所有 JPG 版本和 NEF
+          都将立即停止向所有人展示和提供下载。原文件由拍摄者保留。已下载的文件无法撤回。
+        </p>
+        <label class="confirm-line"
+          ><input type="checkbox" id="hide-confirm" />我确认下架所选照片的全部版本</label
+        >
+        <p id="hide-status" role="status"></p>
+        <div class="dialog-actions">
+          <button id="submit-hide" class="button danger" disabled>确认下架</button
+          ><button class="button secondary" data-close="hide-dialog">再想想</button>
+        </div>
+      </div>
+    </dialog>
+    <noscript><p class="status">请启用 JavaScript 后使用照片库。</p></noscript>
+  </body>
+</html>

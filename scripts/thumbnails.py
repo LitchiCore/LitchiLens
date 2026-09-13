@@ -1,4 +1,5 @@
 """离线缩略图取景：保留检测到的人脸，原片保持只读。"""
+
 from PIL import Image, ImageOps
 from setup_faces import verify_model
 
@@ -6,22 +7,28 @@ from setup_faces import verify_model
 class FaceDetector:
     def __init__(self):
         import cv2
+
         cv2.setNumThreads(2)
         self.cv2 = cv2
-        self.detector = cv2.FaceDetectorYN.create(str(verify_model()), '', (320, 320), 0.8, 0.3, 5000)
+        self.detector = cv2.FaceDetectorYN.create(
+            str(verify_model()), "", (320, 320), 0.8, 0.3, 5000
+        )
 
     def detect(self, image):
         import numpy as np
+
         # 限制推理尺寸；只在离线导入时计算，不增加网站访问时的负载。
         sample = image.copy()
         sample.thumbnail((1280, 1280), Image.Resampling.LANCZOS)
-        frame = self.cv2.cvtColor(np.array(sample.convert('RGB')), self.cv2.COLOR_RGB2BGR)
+        frame = self.cv2.cvtColor(np.array(sample.convert("RGB")), self.cv2.COLOR_RGB2BGR)
         self.detector.setInputSize(sample.size)
         _, faces = self.detector.detect(frame)
         if faces is None:
             return []
         sx, sy = image.width / sample.width, image.height / sample.height
-        return [(float(x) * sx, float(y) * sy, float(w) * sx, float(h) * sy) for x, y, w, h, *_ in faces]
+        return [
+            (float(x) * sx, float(y) * sy, float(w) * sx, float(h) * sy) for x, y, w, h, *_ in faces
+        ]
 
 
 def crop_box(size, faces, ratio=4 / 3):
@@ -47,6 +54,8 @@ def make_thumbnail(image, detector):
     faces = detector.detect(image) if detector else []
     box = crop_box(image.size, faces)
     if box is None:
-        thumb = ImageOps.pad(image, (480, 360), color='#18231c', method=Image.Resampling.LANCZOS)
-        return thumb, '完整画面'
-    return image.crop(box).resize((480, 360), Image.Resampling.LANCZOS), ('人脸取景' if faces else '居中取景')
+        thumb = ImageOps.pad(image, (480, 360), color="#18231c", method=Image.Resampling.LANCZOS)
+        return thumb, "完整画面"
+    return image.crop(box).resize((480, 360), Image.Resampling.LANCZOS), (
+        "人脸取景" if faces else "居中取景"
+    )

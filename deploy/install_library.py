@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """安装照片库 API 和专用 Nginx 配置，失败回滚；不改动其他站点。"""
+
 import argparse
-from datetime import datetime,timezone
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -9,19 +10,21 @@ import pwd
 import shutil
 import subprocess
 from urllib.request import urlopen
-from maintain import current_ip,verify
+from maintain import current_ip, verify
+
 
 def run(command):
-    return subprocess.run(command,check=True,capture_output=True,text=True,timeout=120).stdout
+    return subprocess.run(command, check=True, capture_output=True, text=True, timeout=120).stdout
 
-def nginx_config(token,port):
-    prefix=f'/{token}/'
-    proxy='''proxy_set_header X-Forwarded-Host $http_host;
+
+def nginx_config(token, port):
+    prefix = f"/{token}/"
+    proxy = """proxy_set_header X-Forwarded-Host $http_host;
         proxy_set_header X-Request-Id $request_id;
         proxy_set_header X-Forwarded-Proto https;
         proxy_http_version 1.1;
         proxy_connect_timeout 3s;
-        proxy_read_timeout 60s;'''
+        proxy_read_timeout 60s;"""
     return f'''# LitchiLens；网站共享总带宽由 litchilens-bandwidth 管理，不设置逐连接限速。
 log_format lens_transfer escape=json '{{"id":"$request_id"}}';
 limit_conn_zone $server_name zone=lens_zip_total:1m;
@@ -138,47 +141,74 @@ server {{
 }}
 '''
 
+
 def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--site',required=True)
-    parser.add_argument('--faces',required=True)
-    args=parser.parse_args()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--site", required=True)
+    parser.add_argument("--faces", required=True)
+    args = parser.parse_args()
     # 新版不设逐连接限速，发布前必须先启用共享出口流控。
-    run(['systemctl','is-active','--quiet','litchilens-bandwidth.service'])
-    site=Path(args.site).resolve(strict=True)
-    if not site.is_relative_to('/srv/litchilens/library-releases'):
-        raise ValueError('只发布专用 library-releases 下已验证的目录')
-    config=json.loads(Path('/etc/litchilens/site.json').read_text())
-    nginx=Path('/etc/nginx/sites-available/litchilens')
-    stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
-    backup=Path('/srv/litchilens/backups')/stamp;backup.mkdir(parents=True)
-    shutil.copyfile(nginx,backup/'nginx.conf')
-    unit=Path('/etc/systemd/system/litchilens-library.service')
-    if unit.exists():shutil.copyfile(unit,backup/'service')
-    current=Path('/srv/litchilens/library-current')
-    previous=current.resolve() if current.is_symlink() else None
-    try: account=pwd.getpwnam('litchilens')
+    run(["systemctl", "is-active", "--quiet", "litchilens-bandwidth.service"])
+    site = Path(args.site).resolve(strict=True)
+    if not site.is_relative_to("/srv/litchilens/library-releases"):
+        raise ValueError("只发布专用 library-releases 下已验证的目录")
+    config = json.loads(Path("/etc/litchilens/site.json").read_text())
+    nginx = Path("/etc/nginx/sites-available/litchilens")
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    backup = Path("/srv/litchilens/backups") / stamp
+    backup.mkdir(parents=True)
+    shutil.copyfile(nginx, backup / "nginx.conf")
+    unit = Path("/etc/systemd/system/litchilens-library.service")
+    if unit.exists():
+        shutil.copyfile(unit, backup / "service")
+    current = Path("/srv/litchilens/library-current")
+    previous = current.resolve() if current.is_symlink() else None
+    try:
+        account = pwd.getpwnam("litchilens")
     except KeyError:
-        run(['useradd','--system','--home','/var/lib/litchilens','--shell','/usr/sbin/nologin','litchilens'])
-        account=pwd.getpwnam('litchilens')
-    state=Path('/var/lib/litchilens');state.mkdir(mode=0o700,exist_ok=True);os.chown(state,account.pw_uid,account.pw_gid)
-    completions=Path('/var/log/nginx/litchilens-transfers.log');completions.touch(exist_ok=True);completions.chmod(0o640)
-    os.chown(completions,pwd.getpwnam('www-data').pw_uid,account.pw_gid)
-    faces=state/'faces.json'
-    if faces.exists():shutil.copyfile(faces,backup/'faces.json')
-    shutil.copyfile(args.faces,faces);faces.chmod(0o600);os.chown(faces,account.pw_uid,account.pw_gid)
-    helper=Path('/usr/local/lib/litchilens');helper.mkdir(parents=True,exist_ok=True)
-    if (helper/'library_server.py').exists():shutil.copyfile(helper/'library_server.py',backup/'library_server.py')
-    shutil.copyfile(Path(__file__).with_name('library_server.py'),helper/'library_server.py')
-    for name in ('admin_server.py','admin.html'):
-        if (helper/name).exists():shutil.copyfile(helper/name,backup/name)
-        shutil.copyfile(Path(__file__).with_name(name),helper/name)
-    for p in site.rglob('*'):
-        if p.is_symlink():raise ValueError('发布目录不能包含链接')
+        run(
+            [
+                "useradd",
+                "--system",
+                "--home",
+                "/var/lib/litchilens",
+                "--shell",
+                "/usr/sbin/nologin",
+                "litchilens",
+            ]
+        )
+        account = pwd.getpwnam("litchilens")
+    state = Path("/var/lib/litchilens")
+    state.mkdir(mode=0o700, exist_ok=True)
+    os.chown(state, account.pw_uid, account.pw_gid)
+    completions = Path("/var/log/nginx/litchilens-transfers.log")
+    completions.touch(exist_ok=True)
+    completions.chmod(0o640)
+    os.chown(completions, pwd.getpwnam("www-data").pw_uid, account.pw_gid)
+    faces = state / "faces.json"
+    if faces.exists():
+        shutil.copyfile(faces, backup / "faces.json")
+    shutil.copyfile(args.faces, faces)
+    faces.chmod(0o600)
+    os.chown(faces, account.pw_uid, account.pw_gid)
+    helper = Path("/usr/local/lib/litchilens")
+    helper.mkdir(parents=True, exist_ok=True)
+    if (helper / "library_server.py").exists():
+        shutil.copyfile(helper / "library_server.py", backup / "library_server.py")
+    shutil.copyfile(Path(__file__).with_name("library_server.py"), helper / "library_server.py")
+    for name in ("admin_server.py", "admin.html"):
+        if (helper / name).exists():
+            shutil.copyfile(helper / name, backup / name)
+        shutil.copyfile(Path(__file__).with_name(name), helper / name)
+    for p in site.rglob("*"):
+        if p.is_symlink():
+            raise ValueError("发布目录不能包含链接")
         p.chmod(0o755 if p.is_dir() else 0o644)
     site.chmod(0o755)
-    temp=current.with_name('library-next');temp.symlink_to(site,target_is_directory=True);os.replace(temp,current)
-    unit.write_text('''[Unit]
+    temp = current.with_name("library-next")
+    temp.symlink_to(site, target_is_directory=True)
+    os.replace(temp, current)
+    unit.write_text("""[Unit]
 Description=LitchiLens photo library
 After=network.target
 [Service]
@@ -198,32 +228,51 @@ CPUQuota=200%
 TasksMax=80
 [Install]
 WantedBy=multi-user.target
-''')
+""")
     try:
-        nginx.write_text(nginx_config(config['token'],config['port']))
-        run(['/usr/sbin/nginx','-t'])
-        run(['systemctl','daemon-reload']);run(['systemctl','enable','--now','litchilens-library.service']);run(['systemctl','restart','litchilens-library.service'])
+        nginx.write_text(nginx_config(config["token"], config["port"]))
+        run(["/usr/sbin/nginx", "-t"])
+        run(["systemctl", "daemon-reload"])
+        run(["systemctl", "enable", "--now", "litchilens-library.service"])
+        run(["systemctl", "restart", "litchilens-library.service"])
         import time
+
         for attempt in range(40):
             try:
-                with urlopen('http://127.0.0.1:8766/api/status',timeout=3) as response:
-                    if not json.load(response)['faces_ready']:raise RuntimeError('人脸索引未加载')
+                with urlopen("http://127.0.0.1:8766/api/status", timeout=3) as response:
+                    if not json.load(response)["faces_ready"]:
+                        raise RuntimeError("人脸索引未加载")
                 break
             except OSError:
-                if attempt==39:raise
+                if attempt == 39:
+                    raise
                 time.sleep(1)
-        run(['systemctl','reload','nginx']);time.sleep(1);verify(current_ip(),config['port'],config['token'])
+        run(["systemctl", "reload", "nginx"])
+        time.sleep(1)
+        verify(current_ip(), config["port"], config["token"])
     except Exception:
-        shutil.copyfile(backup/'nginx.conf',nginx)
+        shutil.copyfile(backup / "nginx.conf", nginx)
         if previous:
-            temp.symlink_to(previous,target_is_directory=True);os.replace(temp,current)
-        else:current.unlink(missing_ok=True)
-        for name,target in [('library_server.py',helper/'library_server.py'),('admin_server.py',helper/'admin_server.py'),('admin.html',helper/'admin.html'),('faces.json',faces),('service',unit)]:
-            if (backup/name).exists():shutil.copyfile(backup/name,target)
-        run(['systemctl','daemon-reload'])
-        run(['systemctl','restart' if previous else 'stop','litchilens-library.service'])
-        run(['/usr/sbin/nginx','-t']);run(['systemctl','reload','nginx'])
+            temp.symlink_to(previous, target_is_directory=True)
+            os.replace(temp, current)
+        else:
+            current.unlink(missing_ok=True)
+        for name, target in [
+            ("library_server.py", helper / "library_server.py"),
+            ("admin_server.py", helper / "admin_server.py"),
+            ("admin.html", helper / "admin.html"),
+            ("faces.json", faces),
+            ("service", unit),
+        ]:
+            if (backup / name).exists():
+                shutil.copyfile(backup / name, target)
+        run(["systemctl", "daemon-reload"])
+        run(["systemctl", "restart" if previous else "stop", "litchilens-library.service"])
+        run(["/usr/sbin/nginx", "-t"])
+        run(["systemctl", "reload", "nginx"])
         raise
-    print(f'照片库已发布；备份：{backup}')
+    print(f"照片库已发布；备份：{backup}")
 
-if __name__=='__main__':main()
+
+if __name__ == "__main__":
+    main()
